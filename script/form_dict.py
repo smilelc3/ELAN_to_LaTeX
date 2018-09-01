@@ -43,6 +43,7 @@ class AutoTrans:
             self.dell_one_raw_file(textFile)
 
     def dell_one_raw_file(self, file: str):
+        print(f'正在处理：{file}')
         textString = open(file, 'r').read()
         for char in textString:
             if '\u4e00' <= char <= '\u9fff':    # 中文判断
