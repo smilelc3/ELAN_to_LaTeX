@@ -11,7 +11,7 @@ import os
 import csv
 
 
-class AutoTrans:
+class FormDict:
     def __init__(self):
         # 文件路径相关
         self.rawTextFolder = os.path.split(os.getcwd())[0] + '/rawText'
@@ -65,5 +65,5 @@ class AutoTrans:
                     csvWrite.writerow([key, value])
 
 if __name__ == '__main__':
-    AutoTransTest = AutoTrans()
+    AutoTransTest = FormDict()
     print(AutoTransTest.get_all_raw_files())
