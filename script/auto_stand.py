@@ -74,4 +74,4 @@ def deal_one_sentence(sentenceList: list, preLine) -> list:
     return [ipaList, transOne2One, transZh]
 
 if __name__ == '__main__':
-    deal_one_article('/home/smile/PycharmProjects/ELAN_to_LaTeX/rawText/赶野猪.txt')
+    print(deal_one_article('/home/smile/PycharmProjects/ELAN_to_LaTeX/rawText/赶野猪.txt'))

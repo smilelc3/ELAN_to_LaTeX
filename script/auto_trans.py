@@ -5,7 +5,7 @@ from script.auto_stand import deal_one_article
 import os
 import csv
 import re
-
+from doc.Ipa_to_pinyin_match import INITIAL_RULER, FINAL_RULER
 
 class AutoTrans:
     def __init__(self):
@@ -21,6 +21,20 @@ class AutoTrans:
         # 加载字典
         self.DICT = {}
         self._loading_dict()
+        self.INITIAL_RULER = INITIAL_RULER
+        self.FINAL_RULER = FINAL_RULER
+
+        # 删除可能存在的生成结果
+        for dir, folder, files in os.walk(self.resultFolder):
+            for file in files:
+                os.remove(dir + '/' + file)
+
+        #按照第一个长度排序，然后逆序
+        self.INITIAL_RULER.sort(key=lambda x: len(x[0]))
+        self.INITIAL_RULER.reverse()
+
+        self.FINAL_RULER.sort(key=lambda x: len(x[0]))
+        self.FINAL_RULER.reverse()
 
     def _loading_dict(self):
         # 读取csv至字典
@@ -44,17 +58,65 @@ class AutoTrans:
         articleList = deal_one_article(file_path)
         resultFile = open(self.resultFolder + '/' + os.path.split(file_path)[-1], 'a')
 
-
         for sentence in articleList:
             length = len(sentence[0])
-            latexText = '\\begin{table}[!htbp]\n' + '\t\\scriptsize\n'
+            latexText = '\\begin{table}[ht]\n' + '\t\\scriptsize\n'
             latexText += '\\begin{tabular}{%s}\n\t' % ('l' * length)
+
+            # 拼写符号
+            for Index, ipa in enumerate(sentence[0]):
+                splitResultList = re.split('(⁵⁵|⁵³|³⁵|³³|²¹|¹²|⁵²|²⁵)', ipa)
+                if splitResultList[-1] == '':
+                    splitResultList.pop()
+                # print(splitResultList)
+                for char in splitResultList:
+                    if char == '':
+                        pass
+                    Char = char.replace('-', '')     # 去除-符号
+
+
+                    newChar = ''
+                    isMatch = False
+
+                    # 声母 + 韵母
+                    for initial in self.INITIAL_RULER:
+                        for final in self.FINAL_RULER:
+                            if initial[0] + final[0] == Char:
+                                newChar = initial[1] + final[1]
+                                isMatch = True
+                                break
+                        if isMatch is True:
+                            break
+                    # 单韵母
+                    for final in self.FINAL_RULER:
+                        if final[0] == Char:
+                            newChar = final[1]
+                            isMatch = True
+                            break
+
+                    if isMatch is True:
+                        latexText += newChar
+                    elif Char.isalpha():
+                        print(Char)
+                        pass
+
+                    # 处理音调和符号
+                    if Char in self.DICT.keys():
+                        latexText += self.DICT[Char]
+
+                    if Char in '，。？、！……“”（）：；～×+-=【】[]*/\' ,.?!\"\^():':
+                        latexText += Char
+
+                # 处理最后一行问题
+                if Index != len(sentence[0]) - 1:
+                    latexText += ' & '
+            latexText += '\\\\\n\t'
+
             # 国际音标
-            print(sentence[0])
             for Index, ipa in enumerate(sentence[0]):
                 latexText += '\\textipa{'
 
-                #交换变音字符
+                # 交换变音字符
                 for index in range(len(ipa)):
                     char = ipa[index]
                     if char.encode('utf-8') == b'\xcc\x83':
@@ -82,7 +144,6 @@ class AutoTrans:
                 else:
                     latexText += ' \\\\ \n \t'
 
-
             # 汉语对译
             for index, word in enumerate(sentence[1]):
                 latexText += word
@@ -100,6 +161,7 @@ class AutoTrans:
 
 if __name__ == '__main__':
     AutoTransTest = AutoTrans()
+    print(AutoTransTest.INITIAL_RULER, AutoTransTest.FINAL_RULER, sep='\n')
     for fileStr in AutoTransTest.rawTextList:
         print(fileStr)
         AutoTransTest.transform_one_article(fileStr)
